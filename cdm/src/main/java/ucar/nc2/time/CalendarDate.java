@@ -25,6 +25,13 @@ public class CalendarDate implements Comparable<CalendarDate> {
   public static final double MILLISECS_IN_YEAR = 3.15569259747E10;
   public static final double MILLISECS_IN_MONTH = MILLISECS_IN_YEAR / 12;
 
+  public static final double MILLISECS_IN_SECOND = 1000;
+  public static final double MILLISECS_IN_MINUTE = MILLISECS_IN_SECOND * 60;
+  public static final double MILLISECS_IN_HOUR = MILLISECS_IN_MINUTE * 60;
+  public static final double MILLISECS_IN_DAY = MILLISECS_IN_HOUR * 24;
+  public static final double MILLISECS_IN_YEAR = 3.15569259747E10;
+  public static final double MILLISECS_IN_MONTH = MILLISECS_IN_YEAR / 12;
+  
   /**
    * Get a CalendarDate representing the present moment
    * @return CalendarDate representing the present moment in UTC

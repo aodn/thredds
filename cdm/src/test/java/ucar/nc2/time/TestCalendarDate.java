@@ -61,4 +61,25 @@ public class TestCalendarDate {
      assertEquals(units.toString(), expectedResult, CalendarDateFormatter.toDateTimeStringISO(result));
    }
 
+  @Test
+  public void testAddReturnsClosestDate() {
+    String baseDate = "1950-01-01";
+    double valueInMillisecs = 2025829799999.99977;
+    String expectedResult = "2014-03-13T02:30:00Z";
+    
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs, Field.Millisec, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_SECOND, Field.Second, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_MINUTE, Field.Minute, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_HOUR, Field.Hour, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_DAY, Field.Day, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_MONTH, Field.Month, expectedResult);
+    assertAddReturnsExpectedDate(baseDate, valueInMillisecs/CalendarDate.MILLISECS_IN_YEAR, Field.Year, expectedResult);
+  }
+  
+  private void assertAddReturnsExpectedDate(String baseDate, double value, Field units, String expectedResult) {
+    CalendarDate base = CalendarDateFormatter.isoStringToCalendarDate(Calendar.gregorian, baseDate);
+    CalendarDate result = base.add(value, units);
+    assertEquals(units.toString(), expectedResult, CalendarDateFormatter.toDateTimeStringISO(result));
+  }
+
 }
