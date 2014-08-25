@@ -447,7 +447,7 @@
       <dependency>
          <groupId>org.jdom</groupId>
          <artifactId>jdom2</artifactId>
-         <version>${org.jdom2.version}</version> 
+         <version>${org.jdom2.version}</version>
        </dependency>
       <dependency>
         <groupId>com.sleepycat</groupId>
