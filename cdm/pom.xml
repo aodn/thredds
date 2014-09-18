@@ -15,6 +15,7 @@
   <artifactId>netcdf</artifactId>
   <packaging>jar</packaging>
   <name>NetCDF-Java Library</name>
+  <version>4.3.17-imos</version>
   <description>
     The NetCDF-Java Library is a Java interface to NetCDF files,
     as well as to many other types of scientific data formats.
@@ -33,6 +34,7 @@
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>udunits</artifactId>
+      <version>4.3.17</version>
     </dependency>
 
     <!-- HTTP client -->
