@@ -15,7 +15,7 @@
   <artifactId>netcdf</artifactId>
   <packaging>jar</packaging>
   <name>NetCDF-Java Library</name>
-  <version>4.3.17-imos</version>
+  <version>4.3.17-timestamp_rounding_fix</version>
   <description>
     The NetCDF-Java Library is a Java interface to NetCDF files,
     as well as to many other types of scientific data formats.
