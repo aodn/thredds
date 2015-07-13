@@ -982,14 +982,14 @@ public class Grib2ReportPanel extends ReportPanel {
               f.format(" %s%n %s%n%n", grid.getShortName(), newNames.get(0));
               ok++;
             }
-            
+
           /* } else {
             String newName = renamer.getNewName(mfile.getName(), grid.getShortName());
             if (newName == null) {
               f.format(" ***Grid %s renamer failed%n", grid.getShortName());
               continue;
             }
-            
+
             // test it really exists
             GridDatatype ggrid = gdsNew.findGridByName(newName);
             if (ggrid == null) f.format(" ***Grid %s new name = %s not found%n", grid.getShortName(), newName);
