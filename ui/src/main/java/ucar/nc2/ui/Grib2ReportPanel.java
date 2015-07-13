@@ -1,7 +1,5 @@
 package ucar.nc2.ui;
 
-import org.itadaki.bzip2.BZip2OutputStream;
-import org.itadaki.bzip2.BitOutputStream;
 import org.jdom2.output.XMLOutputter;
 import org.jdom2.output.Format;
 import org.jdom2.Document;
@@ -255,78 +253,8 @@ public class Grib2ReportPanel extends JPanel {
    */
 
   private void doCopyCompress(Formatter f, ucar.nc2.grib.grib2.Grib2Record gr, RandomAccessFile raf, OutputStream out, Counter nbitsC) throws IOException {
-    float[] data = gr.readData(raf);
-
-    Grib2SectionDataRepresentation drss = gr.getDataRepresentationSection();
-    Grib2Drs drs = drss.getDrs(raf);
-
-    // calc scale/offset
-    int nbits = drs.getNBits();
-    nbitsC.count(nbits);
-
-    int width = (2 << (nbits-1)) - 1;
-    //f.format(" nbits = %d%n", nbits);
-    //f.format(" width = %d (0x%s) %n", width2, Long.toHexString(width2));
-
-    float dataMin = Float.MAX_VALUE;
-    float dataMax = -Float.MAX_VALUE;
-    for (float fd : data) {
-      dataMin = Math.min(dataMin, fd);
-      dataMax = Math.max(dataMax, fd);
-    }
-    //f.format(" dataMin = %f%n", dataMin);
-    //f.format(" dataMax = %f%n", dataMax);
-    // f.format(" range = %f%n", (dataMax - dataMin));
-
-    // scale_factor =(dataMax - dataMin) / (2^n - 1)
-    // add_offset = dataMin + 2^(n-1) * scale_factor
-
-    //float scale_factor = (dataMax - dataMin) / width2;
-    //float add_offset = dataMin + width2 * scale_factor / 2;
-
-    float scale_factor =(dataMax - dataMin) / (width - 2);
-    float interval = Math.abs(1/scale_factor);
-    float add_offset = dataMin - scale_factor;
-
-    //f.format(" scale_factor = %f%n", scale_factor);
-    //f.format(" add_offset = %f%n", add_offset);
-
-    // unpacked_data_value = packed_data_value * scale_factor + add_offset
-    // packed_data_value = nint((unpacked_data_value - add_offset) / scale_factor)
-
-    BZip2OutputStream zipper = new BZip2OutputStream(out);
-    BitOutputStream bitOut = new BitOutputStream(zipper);
-    float diffMax = -Float.MAX_VALUE;
-    int count = 0;
-    for (float fd : data) {
-      int packed_data = Math.round((fd - add_offset) / scale_factor);
-      bitOut.writeBits(nbits, packed_data);
-
-      // test
-      float unpacked_data = packed_data * scale_factor + add_offset;
-      float diff = Math.abs(fd-unpacked_data);
-      /* if (diff > interval) {
-        f.format("   org=%f, packed_data=%d unpacked=%f diff = %f%n",fd, packed_data, unpacked_data, diff);
-        f.format("     scale_factor=%f add_offset=%f data=[%f,%f]%n", scale_factor, add_offset, dataMin, dataMax);
-        count++;
-        //if (count > 10) return;
-      } */
-
-      diffMax = Math.max(diffMax, diff);
-    }
-    /*if (diffMax > interval) {
-      System.out.printf("   diffMax=%f interval=%f n=%d%n", diffMax, interval, nbits);
-      System.out.printf("     scale_factor=%f add_offset=%f data=[%f,%f]%n%n", scale_factor, add_offset, dataMin, dataMax);
-    } */
-
-    bitOut.flush();
-    zipper.finish();
-      /* compressedSize = out.size();
-      f.format(" compressedSize = %d%n", compressedSize);
-      f.format(" compressedRatio = %f%n", (float) compressedSize / (n*nbits/8));
-      f.format(" ratio with grib = %f%n", (float) compressedSize / bean1.getDataLength());  */
+    throw new UnsupportedOperationException("BZip support removed");
   }
-
 
   ///////////////////////////////////////////////
 
