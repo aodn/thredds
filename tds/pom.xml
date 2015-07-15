@@ -47,6 +47,7 @@
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf</artifactId>
+      <version>4.3.17-timestamp_rounding_fix</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
