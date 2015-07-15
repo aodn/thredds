@@ -256,7 +256,7 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>netcdf</artifactId>
-        <version>${project.version}</version>
+        <version>${project.version}-timestamp_rounding_fix</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
