@@ -12,14 +12,26 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
         System.out.println("=======================================");
     }
 
+    Object configObject;
+    String path;
+
+    public CrawlableDatasetAmazonS3(String path, Object configObject) {
+
+        this.path = path;
+        this.configObject = configObject;
+
+        System.out.println("path = " + path);
+        System.out.println("configObject = " + configObject);
+    }
+
     @Override
     public Object getConfigObject() {
-        throw new RuntimeException("getConfigObject() not implemented");
+        return configObject;
     }
 
     @Override
     public String getPath() {
-        throw new RuntimeException("getPath() not implemented");
+        return path;
     }
 
     @Override
