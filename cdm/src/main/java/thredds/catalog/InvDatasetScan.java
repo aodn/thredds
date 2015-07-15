@@ -417,36 +417,41 @@ public class InvDatasetScan extends InvCatalogRef {
     }
     catch ( IllegalAccessException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
     catch ( NoSuchMethodException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
     catch ( IOException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
     catch ( InvocationTargetException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
     catch ( InstantiationException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
     catch ( ClassNotFoundException e )
     {
-      log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getMessage() );
+      _printException(e);
       return null;
     }
 
     return scanLocationCrDs;
+  }
+
+  private void _printException(Exception e) {
+    log.error( "createScanLocationCrDs(): failed to create CrawlableDataset for collectionLevel <" + scanLocation + "> and class <" + crDsClassName + ">: " + e.getClass().getName() + " -- " + e.getMessage());
+    e.printStackTrace(System.err);
   }
 
   private CatalogBuilder buildCatalogBuilder()
