@@ -43,6 +43,10 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
         bucketName = path.substring(startIdx, endIdx);
 
         System.out.println("bucketName = " + bucketName);
+
+        for (S3ObjectSummary summary : getObjectSummaries()) {
+            System.out.println("summary = " + summary.getKey());
+        }
     }
 
     @Override
@@ -87,6 +91,17 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
 
     @Override
     public List<CrawlableDataset> listDatasets() throws IOException {
+
+        List<S3ObjectSummary> summaries = getObjectSummaries();
+
+        for (S3ObjectSummary summary : summaries) {
+            System.out.println("summary = " + summary);
+            System.out.println("summary = " + summary.getKey());
+            System.out.println("summary = " + summary.getSize());
+            System.out.println("summary = " + summary.getLastModified());
+            System.out.println();
+        }
+
         throw new RuntimeException("listDatasets() not implemented");
     }
 
@@ -110,27 +125,36 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
 
     @Override
     public long length() {
-        return -1; // Todo - DN: Implement
+        return -1; // Todo - DN: Implement. See: http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/S3ObjectSummary.html#getSize%28%29
     }
 
     @Override
     public Date lastModified() {
-        return null; // Todo - DN: Implement
+        return null; // Todo - DN: Implement. See: http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/S3ObjectSummary.html#getLastModified%28%29
     }
 
-    private void list() {
-        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-                .withBucketName("ASDF");
-        ObjectListing objectListing;
+    private String getPathWithoutBucket() {
+        return path.substring(S3_PROTOCOL.length() + bucketName.length() + DIRECTORY_DELIMITER.length());
+    }
 
-        System.out.println("---------------------------------------------------------------");
+    private List<S3ObjectSummary> getObjectSummaries() {
+
+        System.out.println("getPathWithoutBucket() = " + getPathWithoutBucket());
+
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucketName)
+            .withPrefix(getPathWithoutBucket());
+
+        List<S3ObjectSummary> summaries = new ArrayList<S3ObjectSummary>();
+
+        ObjectListing objectListing;
         do {
             objectListing = s3client.listObjects(listObjectsRequest);
-            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-                System.out.println( " - " + objectSummary.getKey() + "  " + "(size = " + objectSummary.getSize() + ")");
-            }
+            summaries.addAll(objectListing.getObjectSummaries());
+
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());
-        System.out.println("---------------------------------------------------------------");
+
+        return summaries;
     }
 }
