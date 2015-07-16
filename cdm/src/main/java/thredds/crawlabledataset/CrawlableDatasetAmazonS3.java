@@ -49,6 +49,8 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
         }
     }
 
+    // Todo - DN: Maybe a constructor based on an S3ObjectSummary ?
+
     @Override
     public Object getConfigObject() {
         return configObject;
