@@ -62,7 +62,12 @@ public class CrawlableDatasetAmazonS3 implements CrawlableDataset {
 
     @Override
     public CrawlableDataset getParentDataset() {
-        throw new RuntimeException("getParentDataset() not implemented");
+
+        int amountToTrim = path.endsWith(DIRECTORY_DELIMITER) ? DIRECTORY_DELIMITER.length() : 0;
+        String tempPath = path.substring(0, path.length() - amountToTrim);
+        String parentDatasetPath = tempPath.substring(0, tempPath.lastIndexOf(DIRECTORY_DELIMITER) + 1);
+
+        return new CrawlableDatasetAmazonS3(parentDatasetPath, configObject);
     }
 
     @Override
