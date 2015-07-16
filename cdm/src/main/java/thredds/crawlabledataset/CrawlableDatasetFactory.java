@@ -119,6 +119,10 @@ public class CrawlableDatasetFactory
     }
     catch ( InvocationTargetException e )
     {
+      Throwable cause = e.getCause();
+      System.out.println(cause.getClass() + " -- " + cause.getMessage());
+      cause.printStackTrace();
+
       if ( IOException.class.isAssignableFrom( e.getCause().getClass()) )
         throw (IOException) e.getCause();
       else throw e;
