@@ -110,6 +110,8 @@ libraries["httpunit"] = "httpunit:httpunit:1.7"
 
 ////////////////////////////////////////// Other //////////////////////////////////////////
 
+libraries["aws-java-sdk"] = "com.amazonaws:aws-java-sdk:1.9.0"
+
 // See https://github.com/coverity/coverity-security-library
 libraries["coverity-escapers"] = "com.coverity.security:coverity-escapers:1.1.1"
 
