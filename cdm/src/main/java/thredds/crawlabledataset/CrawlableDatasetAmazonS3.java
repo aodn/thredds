@@ -2,6 +2,9 @@ package thredds.crawlabledataset;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -19,6 +22,9 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile
     private ThreddsS3Object s3Object = null;
 
     private static final String EHCACHE_S3_KEY = "S3";
+    private static final int EHCACHE_MAX_OBJECTS = 1000;
+    private static final int EHCACHE_TTL = 60;
+    private static final int EHCACHE_TTI = 5;
 
     public CrawlableDatasetAmazonS3(String path, Object configObject)
     {
@@ -31,6 +37,17 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile
     {
         this(S3Helper.concat(parent.getPath(), s3Object.key), null);
         this.s3Object = s3Object;
+    }
+
+    private Cache getS3Cache()
+    {
+        CacheManager cacheManager = CacheManager.create();
+        Cache cache = null;
+
+        if (!cacheManager.cacheExists(EHCACHE_S3_KEY))
+            cacheManager.addCache(new Cache(EHCACHE_S3_KEY, EHCACHE_MAX_OBJECTS, false, false, EHCACHE_TTL, EHCACHE_TTI));
+
+        return cacheManager.getCache(EHCACHE_S3_KEY);
     }
 
     @Override
@@ -54,7 +71,17 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile
     @Override
     public File getFile()
     {
-        return S3Helper.getS3File(path);
+        Cache cache = getS3Cache();
+        File file = null;
+
+        Element element;
+        if ((element = cache.get(path)) != null)
+            return (File) element.getObjectValue();
+
+        if ((file = S3Helper.getS3File(path)) != null)
+            cache.put(new Element(path, file));
+
+        return file;
     }
 
     @Override
