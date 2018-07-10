@@ -561,13 +561,15 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
         raf = ucar.unidata.io.RandomAccessFile.acquire(uncompressedFileName, buffer_size);
         try {
           makeUncompressed(uriString, uncompressedFileName);
+          return raf;
         } catch (Exception e) {
           //allow to fall through to open the "compressed" file directly - may be a misnamed suffix
         }
-      } else {
-        // normal case - not compressed
-        raf = ucar.unidata.io.RandomAccessFile.acquire(uriString, buffer_size);
       }
+
+      // normal case - not compressed
+      raf = ucar.unidata.io.RandomAccessFile.acquire(uriString, buffer_size);
+
     }
 
     log.info("Finished decompression of " + uriString + " to " + getFilePrefix(uriString));
