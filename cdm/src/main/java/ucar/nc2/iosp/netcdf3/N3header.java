@@ -61,9 +61,14 @@ public class N3header {
     raf.seek(0);
     byte[] b = new byte[4];
     raf.readFully(b);
-    for (int i = 0; i < 3; i++)
-      if (b[i] != MAGIC[i])
+    log.info(Arrays.toString(b));
+    for (int i = 0; i < 3; i++) {
+      if (b[i] != MAGIC[i]) {
+        raf.bufferOut();
+        log.info("INVALID");
         return false;
+      }
+    }
     return ((b[3] == 1) || (b[3] == 2));
   }
 

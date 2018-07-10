@@ -25,6 +25,17 @@ allprojects {  // Doesn't apply any plugins: safe to run closure on all projects
         maven {
             url "http://content.aodn.org.au/repo/maven/"
         }
+        maven {
+            url "http://repo.boundlessgeo.com/main/"
+        }
+        maven {
+            url "http://maven.geotoolkit.org/"
+        }
+        maven {
+            url "http://52north.org/maven/repo/releases/"
+        }
+
+        //http://52north.org/maven/repo/releases/org/n52/sensorweb/52n-oxf-xmlbeans/2.0.0-alpha.3.3/52n-oxf-xmlbeans-2.0.0-alpha.3.3.jar
     }
 }
 

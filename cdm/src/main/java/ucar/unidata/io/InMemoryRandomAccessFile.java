@@ -48,6 +48,9 @@ public class InMemoryRandomAccessFile extends ucar.unidata.io.RandomAccessFile {
    * @param name used as the location
    * @param data the complete data file
    */
+
+  static private org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InMemoryRandomAccessFile.class);
+
   public InMemoryRandomAccessFile(String name, byte[] data) {
     super(1);
     this.location = name;
@@ -59,6 +62,7 @@ public class InMemoryRandomAccessFile extends ucar.unidata.io.RandomAccessFile {
     bufferStart = 0;
     dataSize = buffer.length;
     dataEnd = buffer.length;
+    log.info(String.valueOf(dataEnd));
     filePosition = 0;
     endOfFile = false;
 

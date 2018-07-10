@@ -43,6 +43,8 @@ import java.nio.MappedByteBuffer;
  */
 public class MMapRandomAccessFile extends RandomAccessFile {
 
+  static private org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MMapRandomAccessFile.class);
+
   private MappedByteBuffer source;
 
   /**
@@ -60,6 +62,7 @@ public class MMapRandomAccessFile extends RandomAccessFile {
     bufferStart = 0;
 	  dataSize = (int) channel.size();
 	  dataEnd = channel.size();
+    log.info(String.valueOf(dataEnd));
     filePosition = 0;
     buffer = null;
     endOfFile = false;

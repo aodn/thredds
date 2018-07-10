@@ -101,6 +101,7 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
   static boolean loadWarnings = false;
 
   static private boolean userLoads = false;
+  //static private File uncompressedFile;
 
   // IOSPs are loaded by reflection
   static {
@@ -417,7 +418,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
    * @throws IOException if error
    */
   static public NetcdfFile open(String location, int buffer_size, ucar.nc2.util.CancelTask cancelTask, Object iospMessage) throws IOException {
-
     ucar.unidata.io.RandomAccessFile raf = getRaf(location, buffer_size);
 
     try {
@@ -553,150 +553,217 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
       uriString = StringUtil2.replace(uriString, '\\', "/");
 
       if (uriString.startsWith("file:")) {
-        // uriString = uriString.substring(5);
         uriString = StringUtil2.unescape(uriString.substring(5));  // 11/10/2010 from erussell@ngs.org
       }
 
-      String uncompressedFileName = null;
-      try {
-        uncompressedFileName = makeUncompressed(uriString);
-      } catch (Exception e) {
-        log.warn("Failed to uncompress {}, err= {}; try as a regular file.", uriString, e.getMessage());
-        //allow to fall through to open the "compressed" file directly - may be a misnamed suffix
-      }
-
-      if (uncompressedFileName != null) {
-        // open uncompressed file as a RandomAccessFile.
+      if (isCompressed(uriString)) {
+        String uncompressedFileName = getFilePrefix(uriString);
         raf = ucar.unidata.io.RandomAccessFile.acquire(uncompressedFileName, buffer_size);
-        //raf = new ucar.unidata.io.MMapRandomAccessFile(uncompressedFileName, "r");
-
+        try {
+          makeUncompressed(uriString, uncompressedFileName);
+        } catch (Exception e) {
+          //allow to fall through to open the "compressed" file directly - may be a misnamed suffix
+        }
       } else {
         // normal case - not compressed
         raf = ucar.unidata.io.RandomAccessFile.acquire(uriString, buffer_size);
-        //raf = new ucar.unidata.io.MMapRandomAccessFile(uriString, "r");
       }
     }
+
+    log.info("Finished decompression of " + uriString + " to " + getFilePrefix(uriString));
 
     return raf;
   }
 
-  static private String makeUncompressed(String filename) throws Exception {
-    // see if its a compressed file
+  static private String getFileSuffix(String filename) {
+
     int pos = filename.lastIndexOf('.');
     if (pos < 0) return null;
 
     String suffix = filename.substring(pos + 1);
-    String uncompressedFilename = filename.substring(0, pos);
+
+    return suffix;
+  }
+
+  static private String getFilePrefix(String filename) {
+
+    int pos = filename.lastIndexOf('.');
+    if (pos < 0) return null;
+
+    String prefix = filename.substring(0, pos);
+
+    return prefix;
+
+  }
+
+  static private boolean isCompressed(String filename) {
+
+    // see if its a compressed file
+    String suffix = getFileSuffix(filename);
+
+    log.info(suffix);
 
     if (!suffix.equalsIgnoreCase("Z") && !suffix.equalsIgnoreCase("zip") && !suffix.equalsIgnoreCase("gzip")
             && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
-      return null;
+      return false;
 
-    // see if already decompressed, look in cache if need be
-    File uncompressedFile = DiskCache.getFileStandardPolicy(uncompressedFilename);
-    if (uncompressedFile.exists() && uncompressedFile.length() > 0) {
-      // see if its locked - another thread is writing it
-      FileInputStream stream = null;
-      FileLock lock = null;
-      try {
-        stream = new FileInputStream(uncompressedFile);
+    return true;
+  }
+
+  static private String makeUncompressed(String filename, String uncompressedFilename) throws Exception {
+//    log.info("makeUncompressed("+filename+")");
+
+    // see if its a compressed file
+//    int pos = filename.lastIndexOf('.');
+//    if (pos < 0) return null;
+//
+//    String suffix = filename.substring(pos + 1);
+//    String uncompressedFilename = filename.substring(0, pos);
+//
+//    if (!suffix.equalsIgnoreCase("Z") && !suffix.equalsIgnoreCase("zip") && !suffix.equalsIgnoreCase("gzip")
+//            && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
+//      return null;
+
+//    String uncompressedFilename = isCompressed(filename);
+//    if (uncompressedFilename == null) {
+//      return uncompressedFilename;
+//    }
+
+//    synchronized (uncompressedFile) {
+      // see if already decompressed, look in cache if need be
+      File uncompressedFile = DiskCache.getFileStandardPolicy(uncompressedFilename);
+//    log.info("Uncompressed exists: " + uncompressedFile.exists() + " " + uncompressedFile.length() + " " + uncompressedFilename);
+      if (uncompressedFile.exists() && uncompressedFile.length() > 0) {
+        // see if its locked - another thread is writing it
+        // Waits until it is unlocked
+        FileInputStream stream = null;
+        FileLock lock = null;
+        try {
+          stream = new FileInputStream(uncompressedFile);
+          // obtain the lock
+//        int lockCheckCount=0;
+          while (true) { // loop waiting for the lock
+//          lockCheckCount++;
+            try {
+//              lock = stream.getChannel().lock(0, 1, true); // wait till its unlocked
+              lock = stream.getChannel().lock(0, Long.MAX_VALUE, true); // wait till its unlocked
+              // Maybe this should use tryLock()
+              break;
+
+            } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block
+              try {
+                Thread.sleep(100); // msecs
+              } catch (InterruptedException e1) {
+                break;
+              }
+            }
+          }
+
+//        log.info("Check count:" + lockCheckCount);
+//        log.info("found uncompressed {} for {}", uncompressedFile, filename);
+
+          return uncompressedFile.getPath();
+        } finally {
+          if (lock != null) lock.release();
+          if (stream != null) stream.close();
+        }
+      }
+
+      // At this point the process has no lock on the as yet non-existent uncompressed file so it is up for grabs from any thread to get the lock and start writing
+      // Nonetheless any threads that are trying to read the file (eg N3header.isValidFile()) will ignore the locks as the locks are advisory
+      // Hence the FileCache should be used to obtain our write "lock"?
+
+//      this.cache.acquire();
+//    ucar.unidata.io.RandomAccessFile raf = getRaf(location, buffer_size);
+//NetcdfFile ncfile = null;
+//try {
+//   ncfile = this.reacquire() .acquireFile(uncompressedFile.getPath(), cancelTask);
+//} finally {
+//   if (ncfile != null) ncfile.close();
+//}
+
+      // ok gonna write it
+      // make sure compressed file exists
+      File file = new File(filename);
+      if (!file.exists())
+        return null; // bail out  */
+
+      try (FileOutputStream fout = new FileOutputStream(uncompressedFile)) {
+
         // obtain the lock
+        FileLock lock;
         while (true) { // loop waiting for the lock
           try {
-            lock = stream.getChannel().lock(0, 1, true); // wait till its unlocked
+//          lock = fout.getChannel().lock(0, 1, false);  // HERE - Acquire in FileCache as well so other threads don't try to read the uncompressed file before it is completed??
+            lock = fout.getChannel().lock();
+            // This is an exclusive lock
+            // It only locks the first byte as the file grows - should use shared=Long.MAX_VALUE or just use lock()
+            // The lock should also be treated as ADVISORY
             break;
 
-          } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block
+          } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block -
+            // CRAIG - The reason is that the lock is across processes (JVMs) NOT threads
+//          log.info(oe.toString());
             try {
               Thread.sleep(100); // msecs
             } catch (InterruptedException e1) {
-              break;
             }
           }
         }
 
-        if (debugCompress) log.info("found uncompressed {} for {}", uncompressedFile, filename);
-        return uncompressedFile.getPath();
-      } finally {
-        if (lock != null) lock.release();
-        if (stream != null) stream.close();
-      }
-    }
-
-    // ok gonna write it
-    // make sure compressed file exists
-    File file = new File(filename);
-    if (!file.exists())
-      return null; // bail out  */
-
-    try (FileOutputStream fout = new FileOutputStream(uncompressedFile)) {
-
-      // obtain the lock
-      FileLock lock;
-      while (true) { // loop waiting for the lock
         try {
-          lock = fout.getChannel().lock(0, 1, false);
-          break;
-
-        } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block
-          try {
-            Thread.sleep(100); // msecs
-          } catch (InterruptedException e1) {
-          }
-        }
-      }
-
-      try {
-        if (suffix.equalsIgnoreCase("Z")) {
-          try (InputStream in = new UncompressInputStream(new FileInputStream(filename))) {
-            copy(in, fout, 100000);
-          }
-          if (debugCompress) log.info("uncompressed {} to {}", filename, uncompressedFile);
-
-        } else if (suffix.equalsIgnoreCase("zip")) {
-
-          try (ZipInputStream zin = new ZipInputStream(new FileInputStream(filename))) {
-            ZipEntry ze = zin.getNextEntry();
-            if (ze != null) {
-              copy(zin, fout, 100000);
-              if (debugCompress)
-                log.info("unzipped {} entry {} to {}", filename, ze.getName(), uncompressedFile);
+          String suffix = getFileSuffix(filename);
+          if (suffix.equalsIgnoreCase("Z")) {
+            try (InputStream in = new UncompressInputStream(new FileInputStream(filename))) {
+              copy(in, fout, 100000);
             }
+            if (debugCompress) log.info("uncompressed {} to {}", filename, uncompressedFile);
+
+          } else if (suffix.equalsIgnoreCase("zip")) {
+
+            try (ZipInputStream zin = new ZipInputStream(new FileInputStream(filename))) {
+              ZipEntry ze = zin.getNextEntry();
+              if (ze != null) {
+                copy(zin, fout, 100000);
+                if (debugCompress)
+                  log.info("unzipped {} entry {} to {}", filename, ze.getName(), uncompressedFile);
+              }
+            }
+
+          } else if (suffix.equalsIgnoreCase("bz2")) {
+            try (InputStream in = new CBZip2InputStream(new FileInputStream(filename), true)) {
+              copy(in, fout, 100000);
+            }
+            if (debugCompress) log.info("unbzipped {} to {}", filename, uncompressedFile);
+
+          } else if (suffix.equalsIgnoreCase("gzip") || suffix.equalsIgnoreCase("gz")) {
+
+            try (InputStream in = new GZIPInputStream(new FileInputStream(filename))) {
+              copy(in, fout, 100000);
+            }
+
+            if (debugCompress) log.info("ungzipped {} to {}", filename, uncompressedFile);
           }
+        } catch (Exception e) {
 
-        } else if (suffix.equalsIgnoreCase("bz2")) {
-          try (InputStream in = new CBZip2InputStream(new FileInputStream(filename), true)) {
-            copy(in, fout, 100000);
+          // appears we have to close before we can delete   LOOK
+          //fout.close();
+          //fout = null;
+
+          // dont leave bad files around
+          if (uncompressedFile.exists()) {
+            if (!uncompressedFile.delete())
+              log.warn("failed to delete uncompressed file (IOException) {}", uncompressedFile);
           }
-          if (debugCompress) log.info("unbzipped {} to {}", filename, uncompressedFile);
+          throw e;
 
-        } else if (suffix.equalsIgnoreCase("gzip") || suffix.equalsIgnoreCase("gz")) {
-
-          try (InputStream in = new GZIPInputStream(new FileInputStream(filename))) {
-            copy(in, fout, 100000);
-          }
-
-          if (debugCompress) log.info("ungzipped {} to {}", filename, uncompressedFile);
+        } finally {
+          if (lock != null) lock.release();
         }
-      }  catch (Exception e) {
-
-        // appears we have to close before we can delete   LOOK
-        //fout.close();
-        //fout = null;
-
-        // dont leave bad files around
-        if (uncompressedFile.exists()) {
-          if (!uncompressedFile.delete())
-            log.warn("failed to delete uncompressed file (IOException) {}", uncompressedFile);
-        }
-        throw e;
-
-      } finally {
-        if (lock != null) lock.release();
       }
-    }
 
-    return uncompressedFile.getPath();
+      return uncompressedFile.getPath();
+//    }
   }
 
   static private void copy(InputStream in, OutputStream out, int bufferSize) throws IOException {
@@ -775,7 +842,7 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
                                  Object iospMessage) throws IOException {
 
     IOServiceProvider spi = null;
-    if (debugSPI) log.info("NetcdfFile try to open = {}", location);
+//    log.info("NetcdfFile try to open = {}", location);
 
     // avoid opening file more than once, so pass around the raf.
     if (N3header.isValidFile(raf)) {
