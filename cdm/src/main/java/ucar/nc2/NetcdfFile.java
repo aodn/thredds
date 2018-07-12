@@ -572,8 +572,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
     }
 
-    log.info("Finished decompression of " + uriString + " to " + getFilePrefix(uriString));
-
     return raf;
   }
 
@@ -603,8 +601,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
     // see if its a compressed file
     String suffix = getFileSuffix(filename);
 
-    log.info(suffix);
-
     if (!suffix.equalsIgnoreCase("Z") && !suffix.equalsIgnoreCase("zip") && !suffix.equalsIgnoreCase("gzip")
             && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
       return false;
@@ -613,28 +609,9 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
   }
 
   static private String makeUncompressed(String filename, String uncompressedFilename) throws Exception {
-//    log.info("makeUncompressed("+filename+")");
 
-    // see if its a compressed file
-//    int pos = filename.lastIndexOf('.');
-//    if (pos < 0) return null;
-//
-//    String suffix = filename.substring(pos + 1);
-//    String uncompressedFilename = filename.substring(0, pos);
-//
-//    if (!suffix.equalsIgnoreCase("Z") && !suffix.equalsIgnoreCase("zip") && !suffix.equalsIgnoreCase("gzip")
-//            && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
-//      return null;
-
-//    String uncompressedFilename = isCompressed(filename);
-//    if (uncompressedFilename == null) {
-//      return uncompressedFilename;
-//    }
-
-//    synchronized (uncompressedFile) {
       // see if already decompressed, look in cache if need be
       File uncompressedFile = DiskCache.getFileStandardPolicy(uncompressedFilename);
-//    log.info("Uncompressed exists: " + uncompressedFile.exists() + " " + uncompressedFile.length() + " " + uncompressedFilename);
       if (uncompressedFile.exists() && uncompressedFile.length() > 0) {
         // see if its locked - another thread is writing it
         // Waits until it is unlocked
@@ -643,13 +620,9 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
         try {
           stream = new FileInputStream(uncompressedFile);
           // obtain the lock
-//        int lockCheckCount=0;
           while (true) { // loop waiting for the lock
-//          lockCheckCount++;
             try {
-//              lock = stream.getChannel().lock(0, 1, true); // wait till its unlocked
               lock = stream.getChannel().lock(0, Long.MAX_VALUE, true); // wait till its unlocked
-              // Maybe this should use tryLock()
               break;
 
             } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block
@@ -661,28 +634,12 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
             }
           }
 
-//        log.info("Check count:" + lockCheckCount);
-//        log.info("found uncompressed {} for {}", uncompressedFile, filename);
-
           return uncompressedFile.getPath();
         } finally {
           if (lock != null) lock.release();
           if (stream != null) stream.close();
         }
       }
-
-      // At this point the process has no lock on the as yet non-existent uncompressed file so it is up for grabs from any thread to get the lock and start writing
-      // Nonetheless any threads that are trying to read the file (eg N3header.isValidFile()) will ignore the locks as the locks are advisory
-      // Hence the FileCache should be used to obtain our write "lock"?
-
-//      this.cache.acquire();
-//    ucar.unidata.io.RandomAccessFile raf = getRaf(location, buffer_size);
-//NetcdfFile ncfile = null;
-//try {
-//   ncfile = this.reacquire() .acquireFile(uncompressedFile.getPath(), cancelTask);
-//} finally {
-//   if (ncfile != null) ncfile.close();
-//}
 
       // ok gonna write it
       // make sure compressed file exists
@@ -696,16 +653,10 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
         FileLock lock;
         while (true) { // loop waiting for the lock
           try {
-//          lock = fout.getChannel().lock(0, 1, false);  // HERE - Acquire in FileCache as well so other threads don't try to read the uncompressed file before it is completed??
             lock = fout.getChannel().lock();
-            // This is an exclusive lock
-            // It only locks the first byte as the file grows - should use shared=Long.MAX_VALUE or just use lock()
-            // The lock should also be treated as ADVISORY
             break;
 
           } catch (OverlappingFileLockException oe) { // not sure why lock() doesnt block -
-            // CRAIG - The reason is that the lock is across processes (JVMs) NOT threads
-//          log.info(oe.toString());
             try {
               Thread.sleep(100); // msecs
             } catch (InterruptedException e1) {
@@ -765,7 +716,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
       }
 
       return uncompressedFile.getPath();
-//    }
   }
 
   static private void copy(InputStream in, OutputStream out, int bufferSize) throws IOException {
@@ -844,7 +794,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
                                  Object iospMessage) throws IOException {
 
     IOServiceProvider spi = null;
-//    log.info("NetcdfFile try to open = {}", location);
 
     // avoid opening file more than once, so pass around the raf.
     if (N3header.isValidFile(raf)) {

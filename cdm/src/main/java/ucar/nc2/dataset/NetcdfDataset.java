@@ -653,10 +653,7 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
   static private NetcdfFile openOrAcquireFile(FileCache cache, FileFactory factory, Object hashKey,
                                               String orgLocation, int buffer_size, ucar.nc2.util.CancelTask cancelTask, Object spiObject) throws IOException {
 
-    log.info("OPENING FILE " + "orgLocation " + orgLocation);
-
     if (orgLocation == null) {
-//      log.info("NetcdfDataset.openFile: location is null");
       throw new IOException("NetcdfDataset.openFile: location is null");
     }
 
@@ -671,8 +668,6 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
     } else {
       leadprotocol = allprotocols.get(0);
     }
-
-//    log.info("leadprotocol="+leadprotocol);
 
     // Priority in deciding
     // the service type is as follows.
@@ -713,12 +708,6 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
       }
     }
 
-//    if (svctype == null) {
-//      log.info("svctype is null");
-//    } else {
-//      log.info("Service type: " + svctype.toString());
-//    }
-
     if (svctype == ServiceType.OPENDAP)
       return acquireDODS(cache, factory, hashKey, location, buffer_size, cancelTask, spiObject);
 
@@ -746,7 +735,6 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
       ; // fall through
 
     } else if (svctype != null) {
-//      log.info("Unknown service type: " + svctype.toString());
       throw new IOException("Unknown service type: " + svctype.toString());
     }
 
@@ -754,13 +742,11 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
     if (cache != null) {
       if (factory == null) {
         factory = defaultNetcdfFileFactory;
-//        log.info("NETCDFDATASET");
       }
       return (NetcdfFile) cache.acquire(factory, hashKey, location, buffer_size, cancelTask, spiObject);
     }
 
     // Last resort: try to open as a file
-//    log.info("LAST RESORT");
     return NetcdfFile.open(location, buffer_size, cancelTask, spiObject);
   }
 
@@ -1036,7 +1022,7 @@ public class NetcdfDataset extends ucar.nc2.NetcdfFile {
       c = NetcdfDataset.class.getClassLoader().loadClass("ucar.nc2.dods.DODSNetcdfFile");
       con = c.getConstructor(String.class, ucar.nc2.util.CancelTask.class);
     } catch (ClassNotFoundException e) {
-      log.info("opendap.jar is not on class path or is incorrect version");
+      log.error("opendap.jar is not on class path or is incorrect version");
       throw new IOException("opendap.jar is not on classpath or is incorrect version");
     } catch (Throwable e) {
       log.error("Error openDodsByReflection: ", e);

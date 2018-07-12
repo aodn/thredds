@@ -195,10 +195,8 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
 
   static private final ucar.nc2.util.cache.FileFactory factory = new FileFactory() {
     public FileCacheable open(String location, int buffer_size, CancelTask cancelTask, Object iospMessage) throws IOException {
-      log.info("Opening file: " + location);
       location = StringUtil2.replace(location, "\\", "/"); // canonicalize the name
-//      RandomAccessFile result = new RandomAccessFile(location, "r", buffer_size);  // Change the mode here to rw???
-      RandomAccessFile result = new RandomAccessFile(location, "rw", buffer_size);  // Change the mode here to rw???
+      RandomAccessFile result = new RandomAccessFile(location, "rw", buffer_size);
       result.cacheState = 1;  // in use
       return result;
     }
@@ -229,10 +227,8 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
 
   static public RandomAccessFile acquire(String location, int buffer_size) throws IOException {
     if (cache == null){
-      log.info("NULL CACHE");
       return new RandomAccessFile(location, "r", buffer_size);}
     else {
-      log.info("NOT NULL CACHE");
       return (RandomAccessFile) cache.acquire(factory, location, location, buffer_size, null, null);}
   }
 
@@ -368,7 +364,6 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
         }
         this.file = new java.io.RandomAccessFile(location, mode); // Windows having troublke keeping up ??
       } else {
-        log.info(ioe.getMessage());
         throw ioe;
       }
     }
@@ -507,60 +502,18 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
    * @param pos the offset (in bytes) from the start of the file.
    * @throws IOException if an I/O error occurrs.
    */
-//  public void seek(long pos) throws IOException {
-//    if (pos < 0)
-//      throw new java.io.IOException("Negative seek offset");
-//
-////    log.info("SEEKING:" + pos + " " + bufferStart + " " + dataEnd);
-//
-//    // If the seek is into the buffer, just update the file pointer.
-//    if ((pos >= bufferStart) && (pos < dataEnd)) {
-//      filePosition = pos;
-//      return;
-//    }
-//
-//    // need new buffer, starting at pos
-//    readBuffer(pos);
-//  }
-
   public void seek(long pos) throws IOException {
-
-    // error occurs when dataEnd>0 but the buffer is actually empty
-    // it thinks it has data in the buffer but it does not and it never gets to read more data into buffer
-    // dataEnd should always be 0 if buffer has no data in it
-
-    StackTraceElement[] st = Thread.currentThread().getStackTrace();
-    String callerClass =  st[2].getClassName();
-    String callerMethod =  st[2].getMethodName();
-    int line = st[2].getLineNumber();
-    if (callerClass == "ucar.nc2.iosp.netcdf3.N3header" && callerMethod == "isValidFile") {
-//      dataEnd = 0; // HACK
-      log.info("SEEKING " + line + ":" + callerClass + "." + callerMethod + ":" + pos + " " + bufferStart + " " + dataEnd + " " + dataSize);
-    }
-
     if (pos < 0)
       throw new java.io.IOException("Negative seek offset");
 
     // If the seek is into the buffer, just update the file pointer.
     if ((pos >= bufferStart) && (pos < dataEnd)) {
       filePosition = pos;
-      if (callerClass == "ucar.nc2.iosp.netcdf3.N3header" && callerMethod == "isValidFile") {
-        log.info("pos<dataEnd:" + buffer[0]+","+buffer[1]+","+buffer[2]+","+buffer[3]+","+buffer[4]+","+buffer[5]+","+buffer[6]+","+buffer[7]);
-      }
       return;
     }
 
     // need new buffer, starting at pos
-    if (callerClass == "ucar.nc2.iosp.netcdf3.N3header" && callerMethod == "isValidFile") {
-      logDataEnd = true;
-    }
-
-      readBuffer(pos);
-
-    if (callerClass == "ucar.nc2.iosp.netcdf3.N3header" && callerMethod == "isValidFile") {
-      log.info("pos>=dataEnd" + dataEnd + ":" + buffer[0]+","+buffer[1]+","+buffer[2]+","+buffer[3]+","+buffer[4]+","+buffer[5]+","+buffer[6]+","+buffer[7]);
-      logDataEnd = false;
-    }
+    readBuffer(pos);
   }
 
   protected void readBuffer(long pos) throws IOException {
@@ -572,8 +525,15 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
     bufferStart = pos;
     filePosition = pos;
 
+
+    try {
+      Thread.currentThread().sleep(100);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+
     dataSize = read_(pos, buffer, 0, buffer.length);
-    if (logDataEnd) log.info("dataSize=" +  dataSize);
 
     if (dataSize <= 0) {
       dataSize = 0;
@@ -584,11 +544,6 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
 
     // Cache the position of the buffer end.
     dataEnd = bufferStart + dataSize;
-    if (logDataEnd) log.info("dataEnd=" + dataEnd);
-  }
-
-  public void bufferOut() {
-    //log.info(Arrays.toString(buffer));
   }
 
   /**
@@ -730,9 +685,6 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
       return -1;
     }
 
-//    log.info(Arrays.toString(b) + " " + len + " " + dataEnd + " " + filePosition);
-//    log.info(len + " " + dataEnd + " " + filePosition);
-
     // See how many bytes are available in the buffer - if none,
     // seek to the file position to update the buffer and try again.
     int bytesAvailable = (int) (dataEnd - filePosition);
@@ -822,41 +774,21 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
    */
   protected int read_(long pos, byte[] b, int offset, int len) throws IOException {
 
-    if (logDataEnd) {
-      log.info("BEFORE");
-      log.info("pos="+pos);
-      log.info("b=" + b[0]+","+b[1]+","+b[2]+","+b[3]+","+b[4]+","+b[5]+","+b[6]+","+b[7]);
-      log.info("offset="+offset);
-      log.info("len="+len);
-    }
-
     file.seek(pos);
 
     int n = file.read(b, offset, len);
 
-    /*
     if (debugAccess) {
       if (showRead)
         System.out.println(" **read_ " + location + " = " + len + " bytes at " + pos + "; block = " + (pos / buffer.length));
       debug_nseeks.incrementAndGet();
       debug_nbytes.addAndGet(len);
     }
-    */
 
     if (extendMode && (n < len)) {
       //System.out.println(" read_ = "+len+" at "+pos+"; got = "+n);
       if (logDataEnd) log.info("extendMode: " + extendMode);
       n = len;
-    }
-
-
-    if (logDataEnd) {
-      log.info("AFTER");
-      log.info("pos="+pos);
-      log.info("b=" + b[0]+","+b[1]+","+b[2]+","+b[3]+","+b[4]+","+b[5]+","+b[6]+","+b[7]);
-      log.info("offset="+offset);
-      log.info("len="+len);
-      log.info("n="+n);
     }
 
     return n;
@@ -900,7 +832,6 @@ public class RandomAccessFile implements DataInput, DataOutput, FileCacheable, C
   public byte[] readBytes(int count) throws IOException {
     byte[] b = new byte[count];
     readFully(b);
-//    log.info(Arrays.toString(b));
     return b;
   }
 

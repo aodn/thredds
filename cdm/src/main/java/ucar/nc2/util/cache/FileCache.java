@@ -239,8 +239,6 @@ public class FileCache implements FileCacheIF {
   public FileCacheable acquire(FileFactory factory, Object hashKey, String location,
                                int buffer_size, CancelTask cancelTask, Object spiObject) throws IOException {
 
-    log.info("ACQUIRING");
-
     if (null == hashKey) hashKey = location;
     if (null == hashKey) throw new IllegalArgumentException();
 
@@ -254,11 +252,9 @@ public class FileCache implements FileCacheIF {
 
     FileCacheable ncfile = acquireCacheOnly(hashKey);
     if (ncfile != null) {
-      log.info("Acquired");
       hits.incrementAndGet();
       if (t != null) {
         t.hit++;
-        log.info("TRACKER not null");
         return ncfile;
       }
     }
@@ -266,23 +262,17 @@ public class FileCache implements FileCacheIF {
     if (t != null) t.miss++;
 
     // open the file
-    log.info("OPENING file: "  + location + " : Buffer " + buffer_size);
-    ncfile = factory.open(location, buffer_size, cancelTask, spiObject);  // DEBUG: Factory is MyNetcdfFileFactory() for the zip file and an anonymous function in RandomAccessFile for the .nc file
-    // EMPTY BUFFER HERE
-//    if (cacheLog.isDebugEnabled())
-//      cacheLog.debug("FileCache " + name + " acquire " + hashKey + " " + ncfile.getLocation());
-//    log.info("FileCache " + name + " acquire " + hashKey + " " + ncfile.getLocation());
-
-//    if (debugPrint) System.out.println("  FileCache " + name + " acquire " + hashKey + " " + ncfile.getLocation());
+    ncfile = factory.open(location, buffer_size, cancelTask, spiObject);
+    if (cacheLog.isDebugEnabled())
+      cacheLog.debug("FileCache " + name + " acquire " + hashKey + " " + ncfile.getLocation());
+    if (debugPrint) System.out.println("  FileCache " + name + " acquire " + hashKey + " " + ncfile.getLocation());
 
     // user may have canceled
     if ((cancelTask != null) && (cancelTask.isCancel())) {
-//      log.info("CANCELLING");
       if (ncfile != null) ncfile.close();       // LOOK ??
       return null;
     }
 
-//    log.info("DISABLED?: " + disabled.get());
     if (disabled.get()) return ncfile;
 
     // see if cache element already exists
@@ -341,63 +331,48 @@ public class FileCache implements FileCacheIF {
    */
   private FileCacheable acquireCacheOnly(Object hashKey) {
 
-    log.info("ACQUIRE CACHE ONLY: " + hashKey);
-
     if (disabled.get()) return null;
 
     // see if its in the cache
     CacheElement wantCacheElem = cache.get(hashKey);
     if (wantCacheElem == null) return null;  // not found in cache
 
-    log.info("Found in cache: " + hashKey);
-
     CacheElement.CacheFile want = null;
     synchronized (wantCacheElem) { // synch in order to traverse the list
       for (CacheElement.CacheFile file : wantCacheElem.list) {
-//        log.info("Lock state=" + file.isLocked.toString());
         if (file.isLocked.compareAndSet(false, true)) {
           want = file;
-//          log.info("File now locked:"+file.isLocked.toString());
           break;
         }
       }
     }
 
     if (want == null) {
-      log.info("Locked in cache: " + hashKey);
       return null; // no unlocked file in cache
     }
-
-    log.info("Unlocked in cache: " + hashKey);
 
     // check if modified, remove if so
     if (want.ncfile != null) {
       long lastModified = want.ncfile.getLastModified();
       boolean changed = lastModified != want.lastModified;
 
-//      if (cacheLog.isDebugEnabled() && changed)
-//        cacheLog.debug("FileCache " + name + ": acquire from cache " + hashKey + " " + want.ncfile.getLocation() + " was changed; discard");
+      if (cacheLog.isDebugEnabled() && changed)
+        cacheLog.debug("FileCache " + name + ": acquire from cache " + hashKey + " " + want.ncfile.getLocation() + " was changed; discard");
       if (changed) {
-//        log.info("FileCache " + name + ": acquire from cache " + hashKey + " " + want.ncfile.getLocation() + " was changed; discard");
         remove(want);
       }
     }
 
     if (want.ncfile != null) {
-//      log.info("FileCache " + name + " reacquire " + hashKey);
       try {
         want.ncfile.reacquire(); // rehydrate
       } catch (IOException ioe) {
-//        if (cacheLog.isDebugEnabled())
-          log.info("FileCache " + name + " acquire from cache " + hashKey + " " + want.ncfile.getLocation() +
+        if (cacheLog.isDebugEnabled())
+          cacheLog.debug("FileCache " + name + " acquire from cache " + hashKey + " " + want.ncfile.getLocation() +
                          " failed: " + ioe.getMessage());
         remove(want);  // failed
       }
     }
-
-//    if (want.ncfile != null) {
-//        log.info("FileCache " + name + " found in cache " + hashKey + "(countLocks " + countLocked() +")");
-//    }
 
     return want.ncfile;
   }
@@ -410,7 +385,7 @@ public class FileCache implements FileCacheIF {
        want.ncfile.setFileCache(null); // unhook the caching
        want.ncfile.close();
      } catch (IOException e) {
-       log.info("close failed on "+want.ncfile.getLocation(), e);
+       log.error("close failed on "+want.ncfile.getLocation(), e);
      }
      want.ncfile = null;
   }
@@ -825,9 +800,9 @@ public class FileCache implements FileCacheIF {
       void remove() {
         synchronized (CacheElement.this) {
           if (!list.remove(this))
-            log.info("FileCache " + name + " could not remove " + ncfile.getLocation());
+            cacheLog.warn("FileCache " + name + " could not remove " + ncfile.getLocation());
         }
-//        log.info("FileCache " + name + " remove " + ncfile.getLocation());
+        if (cacheLog.isDebugEnabled()) cacheLog.debug("FileCache " + name + " remove " + ncfile.getLocation());
         if (debugPrint) System.out.printf("  FileCache %s remove %s%n", name, ncfile.getLocation());
       }
 
