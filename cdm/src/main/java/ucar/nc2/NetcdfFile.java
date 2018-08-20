@@ -102,6 +102,8 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
   static private boolean userLoads = false;
 
+  static private StringKeeper stringKeeper = new StringKeeper();
+
   // IOSPs are loaded by reflection
   static {
     // Make sure RC gets loaded
@@ -592,6 +594,9 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
             && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
       return null;
 
+    stringKeeper.control(filename);  // Avoid race condition where the decompressed file is trying to be read by one thread while another is decompressing it
+    //log.info("stringKeeper: " + stringKeeper.toString());
+
     // see if already decompressed, look in cache if need be
     File uncompressedFile = DiskCache.getFileStandardPolicy(uncompressedFilename);
     if (uncompressedFile.exists() && uncompressedFile.length() > 0) {
@@ -620,14 +625,17 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
       } finally {
         if (lock != null) lock.release();
         if (stream != null) stream.close();
+        stringKeeper.release(filename);
       }
     }
 
     // ok gonna write it
     // make sure compressed file exists
     File file = new File(filename);
-    if (!file.exists())
+    if (!file.exists()) {
+      stringKeeper.release(filename);
       return null; // bail out  */
+    }
 
     try (FileOutputStream fout = new FileOutputStream(uncompressedFile)) {
 
@@ -693,8 +701,11 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
       } finally {
         if (lock != null) lock.release();
+        stringKeeper.release(filename);
       }
     }
+
+    stringKeeper.release(filename);
 
     return uncompressedFile.getPath();
   }
