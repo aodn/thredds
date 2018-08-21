@@ -10,7 +10,7 @@ import java.util.List;
  * @author cmrose
  */
 
-public class StringKeeper {
+public class StringLocker {
 
     private List stringList = Collections.synchronizedList(new ArrayList<String>());
     private boolean waiting = false;
@@ -30,7 +30,7 @@ public class StringKeeper {
     }
 
     public synchronized void release(String item) {
-        // Tell StringKeeper the thread is done with the string
+        // Tell StringLocker the thread is done with the string
         stringList.remove(item);
         waiting = false;
         notifyAll();

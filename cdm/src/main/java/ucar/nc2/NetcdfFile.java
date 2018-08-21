@@ -102,7 +102,7 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
   static private boolean userLoads = false;
 
-  static private StringKeeper stringKeeper = new StringKeeper();
+  static private StringLocker stringLocker = new StringLocker();
 
   // IOSPs are loaded by reflection
   static {
@@ -561,10 +561,13 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
       String uncompressedFileName = null;
       try {
+        stringLocker.control(uriString);  // Avoid race condition where the decompressed file is trying to be read by one thread while another is decompressing it
         uncompressedFileName = makeUncompressed(uriString);
       } catch (Exception e) {
         log.warn("Failed to uncompress {}, err= {}; try as a regular file.", uriString, e.getMessage());
         //allow to fall through to open the "compressed" file directly - may be a misnamed suffix
+      } finally {
+        stringLocker.release(uriString);
       }
 
       if (uncompressedFileName != null) {
@@ -594,9 +597,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
             && !suffix.equalsIgnoreCase("gz") && !suffix.equalsIgnoreCase("bz2"))
       return null;
 
-    stringKeeper.control(filename);  // Avoid race condition where the decompressed file is trying to be read by one thread while another is decompressing it
-    //log.info("stringKeeper: " + stringKeeper.toString());
-
     // see if already decompressed, look in cache if need be
     File uncompressedFile = DiskCache.getFileStandardPolicy(uncompressedFilename);
     if (uncompressedFile.exists() && uncompressedFile.length() > 0) {
@@ -625,7 +625,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
       } finally {
         if (lock != null) lock.release();
         if (stream != null) stream.close();
-        stringKeeper.release(filename);
       }
     }
 
@@ -633,7 +632,6 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
     // make sure compressed file exists
     File file = new File(filename);
     if (!file.exists()) {
-      stringKeeper.release(filename);
       return null; // bail out  */
     }
 
@@ -701,11 +699,8 @@ public class NetcdfFile implements ucar.nc2.util.cache.FileCacheable, Closeable 
 
       } finally {
         if (lock != null) lock.release();
-        stringKeeper.release(filename);
       }
     }
-
-    stringKeeper.release(filename);
 
     return uncompressedFile.getPath();
   }
