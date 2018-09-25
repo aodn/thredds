@@ -9,8 +9,8 @@ allprojects {  // Doesn't apply any plugins: safe to run closure on all projects
     repositories {
         // Prefer JCenter to Maven Central. See
         // https://blog.bintray.com/2015/02/09/android-studio-migration-from-maven-central-to-jcenter/
-        jcenter()
-        mavenCentral()  // JCenter isn't quite a superset of Maven Central.
+        maven { url = "http://jcenter.bintray.com" }
+        maven { url = "http://repo.maven.apache.org/maven2" }
         
         // All of the repositories below could be replaced with:
         //     url "https://artifacts.unidata.ucar.edu/repository/unidata-all/"
