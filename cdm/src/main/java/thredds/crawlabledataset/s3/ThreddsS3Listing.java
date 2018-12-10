@@ -36,7 +36,9 @@ public class ThreddsS3Listing {
         }
 
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-            entries.add(new ThreddsS3Object(objectSummary));
+            if(objectSummary.getKey().contains(".nc")) {
+                entries.add(new ThreddsS3Object(objectSummary));
+            }
         }
     }
 

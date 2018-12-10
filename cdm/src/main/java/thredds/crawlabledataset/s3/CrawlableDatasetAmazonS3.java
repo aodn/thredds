@@ -127,13 +127,9 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
         List<CrawlableDataset> crawlableDsets = new ArrayList<>();
 
         for (final ThreddsS3Metadata metadata: listing.getContents()) {
-            if(metadata.getS3uri().getKey().contains(".nc")) {
-                CrawlableDatasetAmazonS3 crawlableDset =
-                        new CrawlableDatasetAmazonS3(metadata.getS3uri(), getConfigObject(), threddsS3Client);
-                crawlableDsets.add(crawlableDset);
-            } else {
-                logger.info(metadata.getS3uri().getKey() + "don't contain .nc");
-            }
+            CrawlableDatasetAmazonS3 crawlableDset =
+                    new CrawlableDatasetAmazonS3(metadata.getS3uri(), getConfigObject(), threddsS3Client);
+            crawlableDsets.add(crawlableDset);
 
         }
 
