@@ -42,7 +42,7 @@ public class ThreddsS3Listing {
             String [] knownFileExtensions = {".hdf", ".xml", ".nc", ".bz2", ".cdp", ".jpg"};
 
             for(int i=0;i<knownFileExtensions.length;i++) {
-                if (objectSummary.getKey().endsWith(knownFileExtensions[i])) {
+                if (objectSummary.getKey().toLowerCase().endsWith(knownFileExtensions[i])) {
                     legitFiles.add(objectSummary.getKey());
                     entries.add(new ThreddsS3Object(objectSummary));
                 }
@@ -58,7 +58,9 @@ public class ThreddsS3Listing {
                 }
             }
         }
-
+        for (String commonPrefix : commonPrefixes) {
+            logger.info("COMMON PREFIX UNFILTERED: " + commonPrefix);
+        }
         for (String commonPrefix : legitCommonPrefixes) {
             logger.info("COMMON PREFIX: " + commonPrefix);
             entries.add(new ThreddsS3Directory(new S3URI(s3uri.getBucket(), commonPrefix)));
