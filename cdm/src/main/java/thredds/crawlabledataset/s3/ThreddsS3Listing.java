@@ -52,6 +52,7 @@ public class ThreddsS3Listing {
         List<String> commonPrefixes = objectListing.getCommonPrefixes();
         Set<String> legitCommonPrefixes = new HashSet<>();
         for(String file : legitFiles) {
+            logger.info("legit file: " + file);
             for(String prefix : commonPrefixes)  {
                 if(file.startsWith(prefix)) {
                     legitCommonPrefixes.add(prefix);
