@@ -39,7 +39,7 @@ public class ThreddsS3Listing {
 
         List<String> legitFiles = new ArrayList<>();
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-            String [] knownFileExtensions = {".hdf", ".xml", ".nc", ".bz2", ".cdp", ".jpg"};
+            String [] knownFileExtensions = {".hdf", ".xml", ".nc", ".bz2", ".cdp", ".jpg", "/"};
 
             for(int i=0;i<knownFileExtensions.length;i++) {
                 if (objectSummary.getKey().toLowerCase().endsWith(knownFileExtensions[i])) {
