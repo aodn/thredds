@@ -56,6 +56,7 @@ public class CachingThreddsS3Client implements ThreddsS3Client {
                 .build(
                     new CacheLoader<S3URI, ThreddsS3Metadata>() {
                         public ThreddsS3Metadata load(S3URI s3uri) throws UriNotFoundException {
+                            logger.info("IT GETS HERE OH NO!");
                             ThreddsS3Metadata metadata = threddsS3Client.getMetadata(s3uri);
                             if (metadata == null) {
                                 throw new UriNotFoundException(s3uri);
