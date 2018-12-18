@@ -43,7 +43,6 @@ import thredds.catalog.InvDatasetFeatureCollection;
 import thredds.catalog.parser.jdom.InvCatalogFactory10;
 import thredds.crawlabledataset.s3.AmazonS3ClientOptions;
 import thredds.crawlabledataset.s3.AmazonS3ConnectionOptions;
-import thredds.crawlabledataset.s3.CachingThreddsS3Client;
 import thredds.crawlabledataset.s3.ThreddsS3ClientImpl;
 import thredds.inventory.CollectionUpdater;
 import thredds.server.ncss.format.SupportedFormat;
@@ -330,10 +329,6 @@ public class CdmInit implements InitializingBean,  DisposableBean{
     int maxMetadataEntries = ThreddsConfig.getInt("AmazonS3.maxCachedMetadata", 10000);
     int maxFileEntries = ThreddsConfig.getInt("AmazonS3.maxCachedFiles", 100);
     int entryExpirationTime = ThreddsConfig.getSeconds("AmazonS3.cacheExpirationTime", 13*60);
-
-    CachingThreddsS3Client.setMaxMetadataEntries(maxMetadataEntries);
-    CachingThreddsS3Client.setMaxFileEntries(maxFileEntries);
-    CachingThreddsS3Client.setEntryExpirationTime(entryExpirationTime);
 
     startupLog.info("CdmInit complete");
   }
