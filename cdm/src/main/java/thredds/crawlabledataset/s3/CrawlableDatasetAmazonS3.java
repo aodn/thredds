@@ -23,7 +23,7 @@ import thredds.crawlabledataset.CrawlableDatasetFile;
 public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
     private static final Logger logger = LoggerFactory.getLogger(CrawlableDatasetAmazonS3.class);
 
-    private static ThreddsS3Client defaultThreddsS3Client = new CachingThreddsS3Client(new ThreddsS3ClientImpl());
+    private static ThreddsS3Client defaultThreddsS3Client = new ThreddsS3ClientImpl();
 
     private final S3URI s3uri;
     private final ThreddsS3Client threddsS3Client;
