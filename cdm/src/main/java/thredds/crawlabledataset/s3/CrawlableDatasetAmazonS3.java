@@ -113,20 +113,13 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
 
     @Override
     public boolean exists() {
-        if(this.s3Metadata == null) {
-            return threddsS3Client.getMetadata(s3uri) != null;
-        } else {
-            return true;
-        }
+        return getS3Metadata() != null;
     }
 
     @Override
     public boolean isCollection() {
-        if(this.s3Metadata == null) {
-            return true;
-        } else {
-            return this.s3Metadata instanceof ThreddsS3Directory;
-        }
+        return getS3Metadata() instanceof ThreddsS3Directory;
+
     }
 
     @Override
@@ -158,12 +151,10 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
      */
     @Override
     public long length() {
-        if (this.s3Metadata == null) {
-            this.s3Metadata = threddsS3Client.getMetadata(s3uri);
-        }
+        ThreddsS3Metadata metadata = getS3Metadata();
 
-        if (this.s3Metadata instanceof ThreddsS3Object) {
-            return ((ThreddsS3Object)this.s3Metadata).getLength();
+        if (metadata instanceof ThreddsS3Object) {
+            return ((ThreddsS3Object)metadata).getLength();
         } else {
             // "this" may be a collection or non-existent. In both cases, we return 0.
             return 0;
@@ -177,12 +168,10 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
      */
     @Override
     public Date lastModified() {
-        if (this.s3Metadata == null) {
-            this.s3Metadata = threddsS3Client.getMetadata(s3uri);
-        }
+        ThreddsS3Metadata metadata = getS3Metadata();
 
-        if (this.s3Metadata instanceof ThreddsS3Object) {
-            return ((ThreddsS3Object)this.s3Metadata).getLastModified();
+        if (metadata instanceof ThreddsS3Object) {
+            return ((ThreddsS3Object)metadata).getLastModified();
         } else {
             // "this" may be a collection or non-existent. In both cases, we return null.
             return null;
@@ -217,5 +206,13 @@ public class CrawlableDatasetAmazonS3 extends CrawlableDatasetFile {
     @Override
     public int hashCode() {
         return Arrays.deepHashCode(new Object[] { this.getS3URI(), this.getConfigObject() });
+    }
+
+    private ThreddsS3Metadata getS3Metadata() {
+        if (this.s3Metadata == null) {
+            this.s3Metadata = threddsS3Client.getMetadata(s3uri);
+        }
+
+        return this.s3Metadata;
     }
 }
