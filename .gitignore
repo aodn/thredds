@@ -61,3 +61,5 @@ thredds.tgz
 
 # ignore shade plugin generated dependency-reduced-pom for ncIdv
 ncIdv/dependency-reduced-pom.xml
+
+dap4/d4tests/src/test/*
