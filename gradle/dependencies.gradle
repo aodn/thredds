@@ -25,6 +25,16 @@ allprojects {  // Doesn't apply any plugins: safe to run closure on all projects
         maven {
             url "http://content.aodn.org.au/repo/maven/"
         }
+        maven {
+            url "http://repo.boundlessgeo.com/main/"
+        }
+        maven {
+            url "http://maven.geotoolkit.org/"
+        }
+        maven {
+            url "http://52north.org/maven/repo/releases/"
+        }
+
     }
 }
 

@@ -16,7 +16,7 @@ pipeline {
 
     post {
         success {
-            archiveArtifacts artifacts: 'src/main/target/*.war', fingerprint: true, onlyIfSuccessful: true
+            archiveArtifacts artifacts: '**/tds*.war', fingerprint: true, onlyIfSuccessful: true
         }
     }
 }
