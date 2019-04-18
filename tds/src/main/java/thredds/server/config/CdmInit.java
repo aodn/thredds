@@ -41,6 +41,8 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import thredds.catalog.InvDatasetFeatureCollection;
 import thredds.catalog.parser.jdom.InvCatalogFactory10;
+import thredds.crawlabledataset.s3.AmazonS3ClientOptions;
+import thredds.crawlabledataset.s3.AmazonS3ConnectionOptions;
 import thredds.crawlabledataset.s3.CachingThreddsS3Client;
 import thredds.crawlabledataset.s3.ThreddsS3ClientImpl;
 import thredds.inventory.CollectionUpdater;
@@ -297,12 +299,38 @@ public class CdmInit implements InitializingBean,  DisposableBean{
 
     // AmazonS3Client configuration
 
-    int maxListingPages = ThreddsConfig.getInt("ThreddsS3ClientImpl.maxListingPages", Integer.MAX_VALUE);
-    int maxMetadataEntries = ThreddsConfig.getInt("CachingThreddsS3Client.maxMetadataEntries", 10000);
-    int maxFileEntries = ThreddsConfig.getInt("CachingThreddsS3Client.maxFileEntries", 100);
-    int entryExpirationTime = ThreddsConfig.getSeconds("CachingThreddsS3Client.entryExpirationTime", 13*60);
+    AmazonS3ClientOptions clientOptions = new AmazonS3ClientOptions();
 
-    ThreddsS3ClientImpl.setMaxListingPages(maxListingPages);
+    clientOptions.setServiceEndpoint(ThreddsConfig.get("AmazonS3.endPoint",
+        AmazonS3ClientOptions.DEFAULT_SERVICE_ENDPOINT));
+    clientOptions.setMaxListingPages(ThreddsConfig.getInt("AmazonS3.listingRequest.maxListingPages",
+        AmazonS3ClientOptions.DEFAULT_MAX_LISTING_PAGES));
+
+    AmazonS3ConnectionOptions listingRequestConnectionOptions = new AmazonS3ConnectionOptions();
+
+    listingRequestConnectionOptions.setConnectTimeOut(ThreddsConfig.getInt("AmazonS3.listingRequest.connectTimeOut",
+        AmazonS3ConnectionOptions.DEFAULT_CONNECT_TIME_OUT));
+    listingRequestConnectionOptions.setSocketTimeOut(ThreddsConfig.getInt("AmazonS3.listingRequest.socketTimeOut",
+        AmazonS3ConnectionOptions.DEFAULT_SOCKET_TIME_OUT));
+
+    clientOptions.setListingRequestConnectionOptions(listingRequestConnectionOptions);
+
+    AmazonS3ConnectionOptions objectRequestConnectionOptions = new AmazonS3ConnectionOptions();
+
+    objectRequestConnectionOptions.setConnectTimeOut(ThreddsConfig.getInt("AmazonS3.objectRequest.connectTimeOut",
+      AmazonS3ConnectionOptions.DEFAULT_CONNECT_TIME_OUT));
+    objectRequestConnectionOptions.setSocketTimeOut(ThreddsConfig.getInt("AmazonS3.objectRequest.socketTimeOut",
+      AmazonS3ConnectionOptions.DEFAULT_SOCKET_TIME_OUT));
+
+    clientOptions.setObjectRequestConnectionOptions(objectRequestConnectionOptions);
+
+    ThreddsS3ClientImpl.setClientOptions(clientOptions);
+
+      // AmazonS3 Caching Client options
+    int maxMetadataEntries = ThreddsConfig.getInt("AmazonS3.maxCachedMetadata", 10000);
+    int maxFileEntries = ThreddsConfig.getInt("AmazonS3.maxCachedFiles", 100);
+    int entryExpirationTime = ThreddsConfig.getSeconds("AmazonS3.cacheExpirationTime", 13*60);
+
     CachingThreddsS3Client.setMaxMetadataEntries(maxMetadataEntries);
     CachingThreddsS3Client.setMaxFileEntries(maxFileEntries);
     CachingThreddsS3Client.setEntryExpirationTime(entryExpirationTime);
