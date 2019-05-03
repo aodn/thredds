@@ -113,7 +113,7 @@ opendap/src/test/data/test.*.*
 tds/src/test/content/thredds/logs
 tds/src/test/content/thredds/cache
 
-# OS generated files 
+# OS generated files
 .DS_Store*
 ehthumbs.db
 # On Windows (and Mac?), it appears that the "Icon" line is followed by two blank lines.
@@ -127,7 +127,7 @@ Thumbs.db
 *.*~
 ._*
 
-# Coverity files 
+# Coverity files
 cov-int
 thredds.tgz
 
